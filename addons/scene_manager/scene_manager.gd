@@ -193,6 +193,14 @@ func _change_scene(scene, add_to_back: bool) -> bool:
 		return true
 	return false
 
+func change_scene_from_node(scene, from_node: Node) -> void:
+	for n in from_node.get_children():
+		from_node.call_deferred("remove_child", n)
+		n.queue_free()
+		
+	var newScene = load(scene).instantiate()
+	from_node.add_child(newScene)
+
 # makes menu clickable or unclickable during transitions
 func _set_clickable(clickable: bool) -> void:
 	if clickable:

@@ -17,3 +17,6 @@ export_presets.cfg
 
 # vscode
 .vscode
+
+# Visual Studio
+.vs
