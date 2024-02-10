@@ -385,7 +385,7 @@ func no_effect_change_scene(scene, hold_timeout: float = 0.0, add_to_back: bool 
 		_set_out_transition()
 
 # Swaps out the scene from the provided "from" root node
-# Useful for when you don't want to delete every note in the Scene Tree
+# Useful for when you don't want to delete every node in the Scene Tree
 func change_scene_from_node(scene, from_node: Node, fade_out_options: Options, fade_in_options: Options, general_options: GeneralOptions) -> void:
 	if (scene is PackedScene || scene is Node || (typeof(scene) == TYPE_STRING && safe_validate_scene(scene))):
 		_first_time = false
