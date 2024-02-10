@@ -193,13 +193,20 @@ func _change_scene(scene, add_to_back: bool) -> bool:
 		return true
 	return false
 
-func change_scene_from_node(scene, from_node: Node) -> void:
+# Make the actual transition happen in change_scene_from_node
+func _change_scene_from_node(scene, from_node: Node) -> bool:
+	var result = false
+	
 	for n in from_node.get_children():
 		from_node.call_deferred("remove_child", n)
 		n.queue_free()
-		
-	var newScene = load(scene).instantiate()
+	
+	#TODO: Add support for Node and PackedScene
+	var newScene = load(Scenes.scenes[scene]["value"]).instantiate()
 	from_node.add_child(newScene)
+	
+	result = true
+	return result
 
 # makes menu clickable or unclickable during transitions
 func _set_clickable(clickable: bool) -> void:
@@ -373,6 +380,43 @@ func no_effect_change_scene(scene, hold_timeout: float = 0.0, add_to_back: bool 
 		_set_in_transition()
 		await get_tree().create_timer(hold_timeout).timeout
 		if _change_scene(scene, add_to_back):
+			if !(scene is Node):
+				await get_tree().node_added
+		_set_out_transition()
+
+# Swaps out the scene from the provided "from" root node
+# Useful for when you don't want to delete every note in the Scene Tree
+func change_scene_from_node(scene, from_node: Node, fade_out_options: Options, fade_in_options: Options, general_options: GeneralOptions) -> void:
+	if (scene is PackedScene || scene is Node || (typeof(scene) == TYPE_STRING && safe_validate_scene(scene))):
+		_first_time = false
+		_set_in_transition()
+		_set_clickable(general_options.clickable)
+		_set_pattern(fade_out_options, general_options)
+		if _fade_out(fade_out_options.fade_speed):
+			await _animation_player.animation_finished
+			fade_out_finished.emit()
+		if _change_scene_from_node(scene, from_node):
+			# Waiting for node_added is pretty unreliable! Not gonna do it!
+			#if !(scene is Node || scene is PackedScene):
+			#	await get_tree().node_added
+			scene_changed.emit()
+		if _timeout(general_options.timeout):
+			await get_tree().create_timer(general_options.timeout).timeout
+		_animation_player.play(NO_COLOR, -1, 1, false)
+		_set_pattern(fade_in_options, general_options)
+		if _fade_in(fade_in_options.fade_speed):
+			await _animation_player.animation_finished
+			fade_in_finished.emit()
+		_set_clickable(true)
+		_set_out_transition()
+
+# Change scene from node with no effect
+func no_effect_change_scene_from_node(scene, from_node: Node, hold_timeout: float = 0.0, add_to_back: bool = true):
+	if (scene is PackedScene || scene is Node || (typeof(scene) == TYPE_STRING && safe_validate_scene(scene))):
+		_first_time = false
+		_set_in_transition()
+		await get_tree().create_timer(hold_timeout).timeout
+		if _change_scene_from_node(scene, from_node):
 			if !(scene is Node):
 				await get_tree().node_added
 		_set_out_transition()
