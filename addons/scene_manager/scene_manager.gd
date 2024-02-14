@@ -198,7 +198,7 @@ func _change_scene_from_node(scene, from_node: Node) -> bool:
 	var result = false
 	
 	for n in from_node.get_children():
-		from_node.call_deferred("remove_child", n)
+		from_node.remove_child(n)
 		n.queue_free()
 	
 	#TODO: Add support for Node and PackedScene
@@ -417,8 +417,10 @@ func no_effect_change_scene_from_node(scene, from_node: Node, hold_timeout: floa
 		_set_in_transition()
 		await get_tree().create_timer(hold_timeout).timeout
 		if _change_scene_from_node(scene, from_node):
-			if !(scene is Node):
-				await get_tree().node_added
+			# Waiting for node_added is pretty unreliable! Not gonna do it!
+			#if !(scene is Node):
+			#	await get_tree().node_added
+			scene_changed.emit()
 		_set_out_transition()
 
 # imports loaded scene into the scene tree but doesn't change the scene
